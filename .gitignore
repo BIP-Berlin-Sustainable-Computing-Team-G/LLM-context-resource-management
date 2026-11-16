@@ -1,0 +1,25 @@
+# personal scratch space
+temp/
+scratch/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# secrets
+.env
+*.key
+
+# experiment artefacts that are too large / regenerable
+experiments/results/large/
+*.safetensors
+*.gguf
+emissions.csv
