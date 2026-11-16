@@ -1,0 +1,93 @@
+LLMs and data management
+
+Topics and notes:
+
+Some tools that we might want to use in the future:
+- codecarbon.io - a library that you can attach to carbon code (estimation what the code is consuming and for a comparison)
+- EcoLogits - measurement of a carbon footprint (for training and measurement LLM impact) (local models and API)
+
+- cool trick is to put code in container and monitoring it, 2 comparisons of different code runs.
+
+
+Context:
+
+ISIS COURSE and INTRO MEETING:
+(from what I believe) is required for the course:
+- on Friday there is a poster & oral exam session and we are required to conduct a research for the topic (context windows and KV-cache reuse) (deadline: Thursday 17:30) and then to prepare a poster showcasing our developement plan for the project, theory on the topic, what we want to do and why.
+
+
+PRESENTATION:
+In a chat, the whole conversation history is sent again with every new message. key-value
+(KV) cache can be used to avoid re-computation but it is a limited resource.
+Overarching Research Question:
+How much energy can context management and KV-cache reuse save in multi-turn
+conversations, and what does it cost in answer quality?
+Possible Research Questions:
+• How does energy per turn grow with conversation length when the full history is resent,
+with and without cache reuse?
+• How do context strategies (full history, sliding window, summarised history) compare in
+energy and answer quality?
+• Do API prompt caching and energy estimation tools agree: does EcoLogits account for
+cached tokens?
+
+Starting Literature:
+• Fernandez et al. Energy Considerations of Large Language Model Inference and Efficiency Optimizations. ACL 2025.
+doi:10.18653/v1/2025.acl-long.1563
+• Kwon et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. SOSP 2023.
+doi:10.1145/3600006.3613165 (background on the KV cache)
+• Liu et al. Lost in the Middle: How Language Models Use Long Contexts. TACL 2024. doi:10.1162/tacl_a_00638
+• Attention to Detail: Evaluating Energy, Performance, and Accuracy Trade-offs Across vLLM Configurations. arXiv:2607.09172
+
+
+POSTER and ORAL EXAM requirements:
+- VERY IMPORTANT - poster session is only a summary of our research on the problem and our plan for the experiments and plans for development of a project. The final project and its results have to be presented by January
+
+POSTER SESSION – GENERAL INFORMATION
+
+- Grading: Oral Exam rewarding 40 out of 100 available points.
+- Format & Duration: 15 – 20 minutes per group at your poster (A0).
+- Participation: Each student has to be actively involved in the discussion and explain their individual responsibilities, area of expertise, and work contributed within the group work. (You have to do this multiple times as the session will be parallelized and multiple supervisors might pass by your poster.)
+- Deadline: Poster files must be handed in at latest Thursday 17:30, or you must print it yourself.
+- Expected Content:
+  * Plan on how to answer the research question over the next weeks until the deadline for the report (11th January).
+  * Preliminary results and challenges.
+  * Intended methodology and honest limits and risks.
+
+----------------------------------------
+
+POSTER SESSION – ASSESSMENT CRITERIA
+
+Group Part: Poster and Pitch
+
+- G1 – Research question and motivation:
+  * Is your question precise, relevant to your topic, and answerable with measurements by the report deadline?
+  * Is it connected to the literature?
+- G2 – Method and measurement design:
+  * System under test, unit of analysis or useful-work metric, tools, workload, repetitions, baseline.
+  * Is it clear which values you measure and which are attributed or modelled?
+- G3 – Preliminary results and evidence:
+  * What did you actually run and collect this week?
+  * Numbers with units, repetitions, and spread. The size of an effect is not assessed.
+- G4 – Challenges, limitations and next steps:
+  * An honest account of what did not work, what limits the validity of your results, and a concrete plan up to the report deadline (11.01.2027).
+- G5 – Poster and pitch:
+  * The poster is structured, readable, and understandable on its own.
+  * The pitch keeps the 5 minutes and carries one clear message.
+
+Individual Part: Questions and Involvement of Each Student
+
+- I1 – Command of the project and own contribution:
+  * You can explain the whole project, not only your own part, and name what you contributed.
+- I2 – Reasoning about method and measurement:
+  * You can justify your group's design decisions and discuss alternatives.
+- I3 – Interpretation of data:
+  * You can read your group's figures and say what the data do and do not show.
+- I4 – Course concepts and transfer:
+  * You use the concepts and units from the lectures correctly and can apply them to a changed setting.
+- I5 – Critical reflection and discussion:
+  * You can judge how far your own evidence can be trusted and respond to critical questions in a reasoned way.[cite: 1]
+
+
+
+
+
