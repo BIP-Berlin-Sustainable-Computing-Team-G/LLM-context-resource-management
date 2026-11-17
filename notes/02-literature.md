@@ -13,7 +13,7 @@ One summary per paper in `notes/papers/`, written by the team member who owns it
 
 - EcoLogits methodology documentation (for B3).
 - CodeCarbon methodology (how it reads GPU/CPU power).
-- Multi-turn memory benchmarks for quality (e.g. LoCoMo, LongMemEval, MT-Bench-101). `[UNVERIFIED — check existence, licence, size]`
+- Multi-turn memory benchmarks for quality → see [datasets.md](datasets.md).
 - Context compression / summarisation for chat agents.
 - Provider docs on prompt caching (OpenAI, Anthropic, Google).
 - Yang et al., "Part-time Power Measurements: Nvidia-smi's Lack of Attention", SC24 (cited by Zine et al.) — for our measurement setup.
