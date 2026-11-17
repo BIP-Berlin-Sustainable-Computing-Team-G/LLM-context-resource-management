@@ -13,7 +13,9 @@ Topic: **context windows and KV-cache reuse** in multi-turn LLM conversations.
 > conversations, and what does it cost in answer quality?
 
 Sub-questions (RQ1–RQ3) and the full problem statement live in
-[`notes/00-problem-overview.md`](notes/00-problem-overview.md).
+[`notes/00-problem-overview.md`](notes/00-problem-overview.md); the longer list of
+candidate questions with scores is in
+[`notes/research-questions.md`](notes/research-questions.md).
 The original course brief is in [`BIP-note-topic-requirements.txt`](BIP-note-topic-requirements.txt) — it is the source of truth for requirements.
 
 ## 2. Two phases — always know which one you are in
@@ -50,20 +52,48 @@ README.md                         short entry point for the team
 notes/                            research notes (Phase 1, kept up to date in Phase 2)
   00-problem-overview.md          problem statement, RQs, hypotheses
   01-theory.md                    transformer inference, KV cache, caching, energy
-  02-literature.md                paper summaries + what we take from each
+  02-literature.md                index of papers: owner, PDF, summary link, relevance
   03-experiment-plan.md           experiment design (draft → protocol for Phase 2)
   04-poster-plan.md               poster structure, owners, checklist
   05-exam-prep.md                 likely oral exam questions + short answers
+  research-questions.md           candidate RQs/hypotheses with scores (/10) — poster picks from here
   open-questions.md               decisions we still need to make
-papers/                           PDFs of the literature (+ papers/README.md index)
-poster/                           poster source and exported PDF
-experiments/                      Phase 2: harness, configs, results (see experiments/README.md)
+  papers/<firstauthor>-<year>.md  one summary per paper, written by its owner
+papers/                           PDFs of the literature
+poster/                           poster source and exported PDF (Phase 1)
+experiments/                      Phase 2: harness/, configs/, spikes/, results/raw/, analysis/
 report/                           Phase 2: final report
 scratch/, temp/                   personal throwaway space (git-ignored)
 ```
 
 Put new notes in `notes/` with a numeric prefix if they belong to the main
-reading order, otherwise a descriptive kebab-case name.
+reading order, otherwise a descriptive kebab-case name. Folders are created when
+there is real content for them — no placeholder files.
+
+### Team and paper ownership
+
+| Member | Paper | Summary |
+|---|---|---|
+| Jan | Fernandez et al., ACL 2025 | `notes/papers/fernandez-2025.md` |
+| Asia | Liu et al., TACL 2024 (Lost in the Middle) | — |
+| Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | — |
+| Valeria | Kwon et al., SOSP 2023 (PagedAttention) | — |
+
+Each paper summary has the same sections: *In short · Setup · Key findings ·
+Limitations · What it means for our project*. Every number cites a figure,
+table or section of the paper. Our own interpretation is marked as such.
+
+### Hardware
+
+- Experiments (Phase 2): server with **2 × NVIDIA RTX 4080 (16 GB VRAM each)**,
+  32 GB RAM, running vLLM. 16 GB per GPU means 3–4B models in bf16 (or a
+  quantised 8B). An 8B model in bf16 needs about 16 GB for weights alone.
+- Development: macOS laptop, 48 GB RAM. No CUDA, so no vLLM energy measurements
+  there. Use it for harness code, tests and dry runs. Reported numbers come
+  only from vLLM on the server.
+- **Engine: vLLM** (decided 2026-11-17). Two of the four required papers are
+  about it, so the exam will focus on it. Prefix caching on vs off = two server
+  configurations. Decisions and open points: `notes/open-questions.md`.
 
 ## 5. Working with AI (allowed — but we must understand everything)
 
@@ -84,6 +114,11 @@ Rules for the assistant:
    prompt length, EcoLogits methodology). Link the official docs and record the
    date checked.
 6. Keep notes concise and poster-oriented: bullet points, formulas, small tables.
+7. **No filler in the repository.** Write only what a team member will actually
+   read: no README per folder, no boilerplate sections, no restating the same
+   content in several files, no "summary of the summary". Brainstorm and
+   working drafts go to `scratch/` (git-ignored) until the team agrees on them.
+   Prefer editing an existing note over creating a new file.
 
 ## 6. Research & experiment rules (mainly Phase 2, but design them now)
 
@@ -96,7 +131,7 @@ Rules for the assistant:
 - **Energy measurement hygiene:** warm-up runs, ≥5 repetitions per condition
   (more if variance is high), randomised run order, measure and subtract idle
   baseline power, report medians + spread, note the sampling rate of the meter
-  (e.g. `nvidia-smi` sampling limitations — see `notes/02-literature.md`).
+  (e.g. `nvidia-smi` sampling limitations — see Zine et al., §VII).
 - **Raw data is immutable.** Raw measurements go to `experiments/results/raw/`
   (one file per run, with metadata); analysis reads raw data and writes derived
   data/figures elsewhere. Never hand-edit results.
@@ -123,5 +158,6 @@ Rules for the assistant:
 
 - **Phase 1:** poster PDF in `poster/`, every section traceable to a note in
   `notes/`, every team member can answer the questions in `notes/05-exam-prep.md`.
-- **Phase 2:** experiments reproducible from `experiments/README.md` with one
+- **Phase 2:** experiments reproducible from `experiments/README.md` (written
+  once the harness exists) with one
   command per experiment, figures regenerated from raw data, report in `report/`.

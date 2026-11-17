@@ -12,11 +12,11 @@ our experiment/development plan. **No results** — only hypotheses and design.
    vs linear, from the back-of-envelope in `01-theory.md`, clearly labelled as a calculation).
 3. **Background** — prefill vs decode; what the KV cache is (size formula + one
    number); prefix caching / PagedAttention; API prompt caching; Lost in the Middle.
-4. **Research questions + hypotheses** — RQ1–RQ3 table from `00-problem-overview.md`.
+4. **Research questions + hypotheses** — the selection from `research-questions.md`.
 5. **Key insight / tension** — truncation & summarisation reduce tokens but break
    the cached prefix (small diagram: append-only prompt vs shifting window).
 6. **Method** — harness diagram; E1/E2/E3 overview table; factors, metrics, tools
-   (vLLM, CodeCarbon/NVML, EcoLogits).
+   (vLLM on RTX 4080, CodeCarbon/NVML, EcoLogits), our conversation set.
 7. **Expected outcomes & threats to validity** — clearly marked as expectations.
 8. **Timeline to January.**
 9. **References** — the four core papers + tool docs.
@@ -25,16 +25,16 @@ our experiment/development plan. **No results** — only hypotheses and design.
 
 | Section | Owner | Status |
 |---|---|---|
-| Motivation + figure | | |
-| Background / theory | | |
-| RQs + hypotheses | | |
-| Method + diagrams | | |
-| Threats + timeline + references | | |
-| Layout / design | | |
+| Motivation + figure | Jan | |
+| Background: takeaways per paper | Asia (Lost in the Middle), Lena (vLLM configurations), Valeria (PagedAttention), Jan (Fernandez) | |
+| RQs + hypotheses | Jan | |
+| Method + diagrams | Jan | |
+| Threats + timeline + references | to split | |
+| Layout / design | to split | |
 
 ## Checklist
 
-- [ ] Poster format/size confirmed with course (A0? A1? portrait?) — see `open-questions.md`
+- [ ] Poster size and orientation confirmed with the course staff (they print it)
 - [ ] Every number on the poster has a source or a shown calculation
 - [ ] No result-like claims; hypotheses labelled as such
 - [ ] All [UNVERIFIED] items in notes resolved or left off the poster

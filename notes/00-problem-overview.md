@@ -23,6 +23,8 @@ So there is a three-way trade-off: **energy ↔ answer quality ↔ memory (cache
 
 ## Sub-questions (from the course brief) + our working hypotheses
 
+More candidates and their scores: [`research-questions.md`](research-questions.md).
+
 | # | Research question | Working hypothesis (to be tested, NOT a result) |
 |---|---|---|
 | RQ1 | How does energy per turn grow with conversation length when the full history is resent, with and without cache reuse? | Without reuse, prefill energy per turn grows ~linearly with history length (total ~quadratic). With prefix caching, per-turn prefill cost becomes ~constant (only new tokens), but decode cost still grows slowly because each generated token attends to the whole cached context. Total energy savings will be **smaller than token savings**, because decode is unchanged. |
@@ -40,14 +42,16 @@ So there is a three-way trade-off: **energy ↔ answer quality ↔ memory (cache
 - Energy estimation tools are what users and companies use for reporting. If they
   ignore caching, reported footprints are biased.
 
-## Scope decisions (proposed — see `open-questions.md`)
+## Scope (decisions in `open-questions.md`)
 
-- Text-only multi-turn chat, one user, no tool use / RAG.
-- Small/medium open-weight models we can run ourselves (e.g. 1–8B) for direct
-  measurement; one commercial API for RQ3.
+- Text-only multi-turn chat, no tool use or RAG. Single user; concurrent users
+  only as a stretch goal.
+- One small open-weight model family (3–4B) served by **vLLM** on our own
+  RTX 4080 GPUs. For RQ3, a free API tier or documentation analysis only.
 - Energy = GPU (+ CPU if measurable) energy during inference, idle-subtracted.
-  Embodied emissions out of scope (mention as limitation).
-- Quality = task accuracy on questions whose answer depends on earlier turns.
+  Embodied emissions are out of scope (mentioned as a limitation).
+- Quality = accuracy on our own conversation set: recall of facts planted in
+  earlier turns, plus exactly gradable tasks (tokenization, reasoning).
 
 ## Key terms (glossary)
 
