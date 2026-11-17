@@ -82,20 +82,33 @@ underestimate real energy. That gap is exactly what we want to measure.
 
 | Strategy | Tokens per turn | Prefix stable? | Information loss | Extra cost |
 |---|---|---|---|---|
-| Full history | grows linearly | **Yes** (append-only) → cache-friendly | none (but see "lost in the middle") | memory grows |
-| Sliding window (last k turns / N tokens) | bounded | **No** — the start shifts every turn → cache miss on almost everything | drops early turns | none |
-| Summarised history | bounded | **No**, unless the summary is updated rarely (e.g. every k turns) | lossy, depends on summariser | summarisation LLM calls (energy!) |
-| Hybrid ideas (to consider) | bounded | partially (e.g. window that jumps in blocks) | tunable | — |
+| **1. Full history** | grows linearly | **Yes** (append-only) → cache-friendly | none (but subject to "lost in the middle") | memory footprint grows $O(T)$ |
+| **2. Sliding window** (e.g. last 5 messages) | bounded | **No** — start shifts every turn → full cache miss | drops all turns older than window | none |
+| **3. Summarised history** (one-time batch) | bounded | **No** — prefix rewrites at compression boundary | lossy abstraction, loss of detail | one-off high decode energy spike |
+| **4. Rolling summary** (incremental) | bounded | **No** (unless chunked / append-only) | compounding abstraction drift | continuous decode energy overhead per turn |
 
-Key insight for the poster: **truncation and caching pull in opposite
-directions.** Fewer tokens ≠ less work if those tokens are no longer cached.
+### Detailed breakdown of strategies & failure modes:
+
+1. **Full history:** The naive conversational standard. Remembers every word verbatim across all turns.
+   - *Problems:* Heavy GPU VRAM consumption ($O(T)$ KV-cache size, risking evictions or out-of-memory under concurrency); severe **"Lost in the Middle"** retrieval degradation for facts in intermediate turns (Liu et al., 2024); quadratic token work and energy waste if prefix caching is inactive.
+2. **Sliding window (e.g. last 5 messages / $k$ turns):** Retains only the most recent conversation slice.
+   - *Problems:* **Immediate amnesia** for any fact or constraint mentioned prior to the window; **destroys prefix caching** completely because the prompt prefix shifts forward on every turn, causing a 100% cache miss despite processing fewer tokens.
+   - *Benefit:* Strictly bounded memory; eliminates middle-context dilution for recent interactions.
+3. **Summarised history (one-time batch):** When context reaches a threshold, a single compression prompt condenses all preceding history into a synthesized overview.
+   - *Problems:* Large one-time **latency and energy spike** (an entire long transcript is read and decoded into summary tokens); loss of fine details, numbers, or exact quotes; the summarisation prompt itself is vulnerable to "Lost in the Middle".
+4. **Rolling summary (incremental):** Continuously merges new incoming dialogue into an evolving summary state.
+   - *Problems:* **Compounding information drift and hallucinations** over long horizons; incurs an ongoing **energy tax** on every turn due to extra LLM generation; rewrites the summary prefix each turn, destroying KV-cache reuse unless structured as append-only deltas.
+
+Key insight for the poster: **truncation/summarisation and caching pull in opposite directions.**
+Fewer tokens do not guarantee lower energy if those tokens destroy KV-cache reuse. Furthermore, summarisation incurs an extra decode-heavy generation cost. This establishes a **break-even threshold**: summarisation only saves net energy if the conversation becomes long enough that the per-turn prefill savings of a condensed context outweigh the continuous decode energy overhead of generating the summaries.
 
 ## 7. Long context ≠ well-used context ("Lost in the Middle")
 
-Liu et al.: model accuracy is highest when relevant information is at the
+Liu et al. (2024): model accuracy is highest when relevant information is at the
 **beginning or end** of the context and drops when it is in the **middle**
-(U-shaped curve), even for long-context models. Implications:
-- Full history is not automatically the quality upper bound.
+(U-shaped curve), even for long-context models. Key implications:
+- Full history is not automatically the quality upper bound; retaining everything
+  buries intermediate facts in the model's blind spot.
 - Summarisation/truncation might hurt less than expected — or even help — when
   the relevant information would otherwise sit in the middle.
 - Our quality test must control *where* (which turn) the needed information is.

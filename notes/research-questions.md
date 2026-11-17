@@ -83,11 +83,19 @@ sliding window changes the prefix every turn, so nothing gets reused. A
 cache-aware variant keeps the prefix stable for k turns. This is the most
 original idea we have, and it extends B2 directly.
 
-**O2. After how many turns does summarisation pay back the energy of its own
-summarisation calls?** — **7/10**
-The brief says to count all energy, and a summarisation call is extra
-generation, i.e. decode-heavy work. Short chats may never pay it back. This
-becomes nearly free once the B2 harness exists.
+**O2. What is the net energy overhead of context summarization, and at what
+conversation length does it reach a break-even point compared to KV-cache reuse?** — **9/10**
+*(PL: Jaki jest narzut energetyczny ciągłego streszczania kontekstu i przy jakiej
+długości rozmowy osiąga ono próg opłacalności w porównaniu z ponownym użyciem pamięci
+podręcznej KV?)*
+Summarisation compresses dialogue to keep input lengths small, but each summarisation
+call requires extra autoregressive generation (decode-heavy work, which Fernandez
+et al. show consumes far more energy per token than prefill). Furthermore, updating
+a summary alters the prompt prefix, destroying prefix-cache blocks. In short
+dialogues ($T < T^*$), the decode energy overhead of summarisation exceeds the
+energy saved by shortening prefill. This question determines the exact break-even
+turn count $T^*$ where summarisation becomes energetically viable compared to
+caching the full history.
 
 **O3. What does a "cache-hostile" prompt cost?** — **6/10**
 Examples are a timestamp or user ID at the top of the system prompt, or an
@@ -106,6 +114,6 @@ B2/O1.
 
 ## Proposal for the poster
 
-The main line is **B1 + F1/F2**, then **B2 + O1**, reported with **O4**.
-F4 is the stretch goal. B3 and O2 are mentioned as side questions. F3 and O3
+The main line is **B1 + F1/F2**, then **B2 + O1 + O2**, reported with **O4**.
+F4 is the stretch goal. B3 is mentioned as a side question. F3 and O3
 go in the discussion only.

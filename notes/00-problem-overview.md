@@ -28,7 +28,7 @@ More candidates and their scores: [`research-questions.md`](research-questions.m
 | # | Research question | Working hypothesis (to be tested, NOT a result) |
 |---|---|---|
 | RQ1 | How does energy per turn grow with conversation length when the full history is resent, with and without cache reuse? | Without reuse, prefill energy per turn grows ~linearly with history length (total ~quadratic). With prefix caching, per-turn prefill cost becomes ~constant (only new tokens), but decode cost still grows slowly because each generated token attends to the whole cached context. Total energy savings will be **smaller than token savings**, because decode is unchanged. |
-| RQ2 | How do context strategies (full history, sliding window, summarised history) compare in energy and answer quality? | Sliding window / summarisation cap the context size, but they **change the prompt prefix** every turn and thereby invalidate the prefix cache. With caching enabled, *full history* may be competitive with or cheaper than truncation for moderate lengths. Quality drops for truncation when the answer depends on early turns; summarisation sits in between and adds the energy of the summarisation calls. |
+| RQ2 | How do context strategies (full history, sliding window, summarised history, rolling summary) compare in energy and answer quality? What is the break-even point of summarisation? | Sliding window and summarisation bound the token count, but they **change the prompt prefix** and destroy prefix cache reuse. In short dialogues, summarisation adds the heavy decode overhead of its own calls without saving enough prefill work (net energy loss). Beyond a break-even conversation length ($T^*$), summarisation may save net energy. For quality, sliding window drops early turns, full history suffers from "Lost in the Middle" (Liu et al.), and summaries risk abstraction drift. |
 | RQ3 | Do API prompt caching and energy estimation tools agree: does EcoLogits account for cached tokens? | API providers report cached tokens and bill them at a discount (evidence that less compute is done), but EcoLogits' estimate is driven mainly by model size and **output** tokens, so it will report (nearly) the same energy with and without caching `[UNVERIFIED — check EcoLogits methodology docs]`. |
 
 ## Why this matters (sustainability angle)
@@ -63,5 +63,5 @@ More candidates and their scores: [`research-questions.md`](research-questions.m
 - **API prompt caching** — the provider-side equivalent; reported as cached input
   tokens and billed at a discount.
 - **TTFT** — time to first token (mostly prefill). **TPOT/ITL** — time per output token (decode).
-- **Context strategies** — full history, sliding window (last *k* turns / *N* tokens),
-  summarised history (older turns replaced by an LLM-generated summary).
+- **Context strategies** — full history, sliding window (e.g. last 5 messages / $k$ turns),
+  summarised history (batch summary at threshold), rolling summary (incremental updates).

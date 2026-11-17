@@ -75,7 +75,7 @@ there is real content for them — no placeholder files.
 | Member | Paper | Summary |
 |---|---|---|
 | Jan | Fernandez et al., ACL 2025 | `notes/papers/fernandez-2025.md` |
-| Asia | Liu et al., TACL 2024 (Lost in the Middle) | — |
+| Asia | Liu et al., TACL 2024 (Lost in the Middle) | `notes/papers/liu-2024.md` |
 | Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | — |
 | Valeria | Kwon et al., SOSP 2023 (PagedAttention) | — |
 

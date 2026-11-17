@@ -8,7 +8,7 @@ Phase 2. Question IDs (B1, F1, O1, …) refer to `research-questions.md`.
 | Exp | Answers | Main factor(s) |
 |---|---|---|
 | E1 | B1, F1, F2, F3 | conversation length × prefix caching on/off (full history) |
-| E2 | B2, O1, O2, O4 | context strategy × prefix caching on/off |
+| E2 | B2, O1, O2, O4 | context strategy (full history, sliding window, summary, rolling summary) × caching on/off |
 | E3 | B3 | API caching vs EcoLogits estimate (free tier or documentation only) |
 | E4 (stretch) | F4 | number of concurrent users × caching on/off |
 
@@ -17,16 +17,11 @@ conversations turn by turn against vLLM's OpenAI-compatible server, applies a
 context strategy before each call, and logs per-turn tokens, cached tokens,
 timings and energy.
 
-## System under test
+## System under test & container architecture
 
 - **Engine: vLLM** on the server (2 × RTX 4080 16 GB, CUDA). We chose vLLM
   because two of our four papers are about it (PagedAttention, vLLM
   configurations), and because its prefix caching is the mechanism we study.
-  - Two server configurations, ideally as two containers that differ only in
-    one flag: prefix caching **on** vs **off**. [check current vLLM default:
-    prefix caching may be on by default, so "off" needs an explicit flag]
-  - Pin the vLLM version and record the full config (Zine et al.: options
-    can even change accuracy).
 - **One GPU per run**, no tensor parallelism. Fernandez et al. show tensor
   parallelism raises total energy. The second GPU can run a separate
   experiment, but then CPU energy cannot be attributed to either run.
@@ -36,6 +31,31 @@ timings and energy.
 - **Mac (Apple Silicon):** harness development, unit tests and dry runs only.
   No reported numbers come from the Mac: Docker there has no GPU access, and
   the engine would differ.
+
+### Container deployment & ablation matrix
+
+To ensure rigorous reproducibility and eliminate environment drift, vLLM instances
+are deployed as isolated Docker containers monitored via CodeCarbon and NVML.
+
+1. **Core 2-container baseline comparison:**
+   - **Container 0 (Unoptimized Baseline):** vLLM running without prefix caching
+     (`--no-enable-prefix-caching`). Naive full recomputation on every turn.
+   - **Container 1 (Optimized LLM):** vLLM running with automatic prefix caching
+     (`--enable-prefix-caching`). Reuses KV-cache blocks across turns for stable prefixes.
+
+2. **Multi-container ablation setup (isolated vs. combined optimizations):**
+   To dissect how much energy each individual mechanism saves vs. costs, we extend
+   to an ablation suite:
+   - **Container A (Prefix Caching only):** Prefix caching ON, full history sent.
+   - **Container B (Sliding Window Context):** Fixed sliding window (last 5 messages),
+     caching OFF. Demonstrates pure token-truncation savings without cache reuse.
+   - **Container C (Context Summarization):** Periodic / rolling summary manager,
+     caching OFF. Demonstrates context compression with summarisation energy tax.
+   - **Container D ("Mega-optimized" / Combined):** Prefix caching ON combined with
+     a cache-aware context manager (e.g. chunked sliding window or append-only
+     rolling summary that avoids invalidating KV-cache prefix blocks).
+   - *Goal:* Contrast the combined optimization against each isolated option to
+     reveal synergies, overheads, and trade-offs.
 
 ## Workload: our own conversation set
 
@@ -52,7 +72,11 @@ Built from Jan's buzz-group task types. The task types define the
 
 - Each conversation mixes these turns. Some early turns **plant facts** (a name,
   a number, a constraint), and later turns ask about them.
-- The position of the planted fact varies: early, middle, recent (Liu et al.).
+- **Positioning following Liu et al. (Lost in the Middle):** The position of the
+  planted fact is varied systematically across turns:
+  - *Early turns* (turns 1–3) — tests retention of initial instructions.
+  - *Middle turns* (turns 10–15) — directly targets the U-shaped degradation blind spot.
+  - *Recent turns* (last 2–3 turns) — tests recency bias and short-term window retention.
 - General-knowledge questions (answered from training data) are left out of
   the quality score, because they do not depend on the context.
 - The mix of output lengths matters for energy. Decode-heavy turns should
@@ -82,7 +106,7 @@ Built from Jan's buzz-group task types. The task types define the
 
 ## E1 — Energy growth with conversation length
 
-- Full history, prefix caching off vs on.
+- Full history, prefix caching off vs on (Container 0 vs Container 1).
 - Plots: energy per turn vs turn index; cumulative energy vs T; prefill vs
   decode share per turn.
 - Hypotheses: without caching, per-turn energy rises with history length; with
@@ -90,12 +114,36 @@ Built from Jan's buzz-group task types. The task types define the
   relative token saving (F1). The curves separate only above some history
   length (F2). The TTFT gain is larger than the energy gain (F3).
 
-## E2 — Context strategies
+## E2 — Context strategies & Break-Even Analysis
 
-- Full history · sliding window (last k turns) · summarised history · cache-aware
-  variants (window that drops old turns in chunks every k turns; append-only
-  summary) (O1). Each with caching off/on.
-- The energy of summarisation calls is counted in the strategy's total (O2).
+Evaluates the 4 primary context strategies under both caching regimes:
+1. **Full history:** Naive baseline. Re-sends complete transcript every turn.
+   - *Hypothesis:* Cache-friendly (stable prefix), but memory grows linearly and
+     middle-placed facts suffer severe degradation (Liu et al.).
+2. **Sliding window (last 5 messages):** Strict cut-off discarding older messages.
+   - *Hypothesis:* Low, constant memory; avoids middle-context degradation for recent
+     facts, but amnesic to early planted facts and destroys prefix caching (100% cache miss).
+3. **Summarised history (one-time batch):** Compresses dialogue up to turn $t$
+   into a single narrative summary upon hitting a token budget.
+   - *Hypothesis:* Bounded prompt length, but causes an energy/latency spike during
+     summarisation and invalidates subsequent KV cache.
+4. **Rolling summary (incremental):** Continuously merges previous summary with
+     the latest exchange.
+   - *Hypothesis:* Continuous decode energy overhead; causes abstraction drift.
+
+### Core Research Question for E2 (O2):
+> **What is the net energy overhead of context summarization, and at what conversation
+> length does it reach a break-even point compared to KV-cache reuse?**
+> *(PL: Jaki jest narzut energetyczny ciągłego streszczania kontekstu i przy jakiej
+> długości rozmowy osiąga ono próg opłacalności w porównaniu z ponownym użyciem pamięci
+> podręcznej KV?)*
+
+- **Break-even methodology:**
+  - Track total cumulative energy: $E_{\text{total}}(T) = \sum_{t=1}^T E_{\text{inference}}(t) + \sum E_{\text{summarise}}$.
+  - In short conversations ($T < T^*$), the extra decode energy required by summarisation
+    calls plus the loss of prefix caching will make summarisation consume **more net energy**
+    than uncompressed prefix-cached full history.
+  - Determine empirically at what turn length $T^*$ the curves cross (break-even point).
 - Output: energy–quality Pareto plot per conversation length; ranking by energy
   per correct answer (O4).
 
