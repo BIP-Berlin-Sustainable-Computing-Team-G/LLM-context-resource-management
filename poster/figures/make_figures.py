@@ -1,6 +1,6 @@
 """Poster figures. Calculations only, no measurements.
 
-Token model (see notes/01-theory.md §4): system prompt S, each turn adds a user
+Token model (see notes/research-questions.md, RQ1 comment): system prompt S, each turn adds a user
 message u and an answer a. A context strategy decides which earlier turns stay
 in the prompt. With prefix caching, the tokens that can be reused are the
 longest common prefix with the previous turn's prompt (conservative: the
@@ -55,7 +55,7 @@ def simulate(strategy, cache):
 
 
 def check():
-    # worked example from notes/01-theory.md §4 (T = 20)
+    # worked example (T = 20)
     global T
     saved, T = T, 20
     assert sum(simulate("full", cache=False)[0]) == 88_000
