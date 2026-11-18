@@ -32,8 +32,9 @@ facts planted in early turns, plus gradable tasks.
 
 **B3. Do API prompt caching and energy-estimation tools agree — does EcoLogits
 account for cached tokens?** — **6/10**
-It matters for how footprints get reported. The EcoLogits documentation may
-already answer it without an experiment. We also cannot measure the energy of a
+It matters for how footprints get reported. The EcoLogits documentation
+answers the yes/no part: its formula has no input or cached tokens (checked
+2026-11-17, `01-theory.md` §9). What is left is how far off the estimate is. We also cannot measure the energy of a
 commercial API, so we could only compare the estimator against our own local
 measurement. Our budget is zero, so it only works on a free tier (Google AI
 Studio, GroqCloud) that reports cached tokens. That makes it a good side
@@ -85,9 +86,6 @@ original idea we have, and it extends B2 directly.
 
 **O2. What is the net energy overhead of context summarization, and at what
 conversation length does it reach a break-even point compared to KV-cache reuse?** — **9/10**
-*(PL: Jaki jest narzut energetyczny ciągłego streszczania kontekstu i przy jakiej
-długości rozmowy osiąga ono próg opłacalności w porównaniu z ponownym użyciem pamięci
-podręcznej KV?)*
 Summarisation compresses dialogue to keep input lengths small, but each summarisation
 call requires extra autoregressive generation (decode-heavy work, which Fernandez
 et al. show consumes far more energy per token than prefill). Furthermore, updating
@@ -96,6 +94,13 @@ dialogues ($T < T^*$), the decode energy overhead of summarisation exceeds the
 energy saved by shortening prefill. This question determines the exact break-even
 turn count $T^*$ where summarisation becomes energetically viable compared to
 caching the full history.
+
+**L1. How does accuracy depend on which turn holds the needed fact, for each
+context strategy?** — **8/10**
+Liu et al. show a U-shape over the position of the needed information, and
+only recency bias for Llama-2 7B. For our 3–4B models this decides how much
+quality truncation really costs. It needs no extra runs: the planted facts in
+our conversation set already vary their position.
 
 **O3. What does a "cache-hostile" prompt cost?** — **6/10**
 Examples are a timestamp or user ID at the top of the system prompt, or an
@@ -112,8 +117,7 @@ B2/O1.
 
 ---
 
-## Proposal for the poster
+## Chosen
 
-The main line is **B1 + F1/F2**, then **B2 + O1 + O2**, reported with **O4**.
-F4 is the stretch goal. B3 is mentioned as a side question. F3 and O3
-go in the discussion only.
+The final 8 questions (RQ1–RQ8) with hypotheses:
+[`chosen-research-questions.md`](chosen-research-questions.md).

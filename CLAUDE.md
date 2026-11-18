@@ -12,8 +12,9 @@ Topic: **context windows and KV-cache reuse** in multi-turn LLM conversations.
 > How much energy can context management and KV-cache reuse save in multi-turn
 > conversations, and what does it cost in answer quality?
 
-Sub-questions (RQ1–RQ3) and the full problem statement live in
-[`notes/00-problem-overview.md`](notes/00-problem-overview.md); the longer list of
+The problem statement lives in
+[`notes/00-problem-overview.md`](notes/00-problem-overview.md), the 8 chosen research
+questions (RQ1–RQ8) in [`notes/chosen-research-questions.md`](notes/chosen-research-questions.md); the longer list of
 candidate questions with scores is in
 [`notes/research-questions.md`](notes/research-questions.md).
 The original course brief is in [`BIP-note-topic-requirements.txt`](BIP-note-topic-requirements.txt) — it is the source of truth for requirements.
@@ -50,17 +51,20 @@ BIP-note-topic-requirements.txt   course brief (source of truth)
 CLAUDE.md                         this file
 README.md                         short entry point for the team
 notes/                            research notes (Phase 1, kept up to date in Phase 2)
-  00-problem-overview.md          problem statement, RQs, hypotheses
+  00-problem-overview.md          problem statement, scope, glossary
   01-theory.md                    transformer inference, KV cache, caching, energy
   02-literature.md                index of papers: owner, PDF, summary link, relevance
   03-experiment-plan.md           experiment design (draft → protocol for Phase 2)
-  04-poster-plan.md               poster structure, owners, checklist
+  04-poster-plan.md               full poster content (made in Canva), owners, checklist
   05-exam-prep.md                 likely oral exam questions + short answers
-  research-questions.md           candidate RQs/hypotheses with scores (/10) — poster picks from here
+  06-implementation-plan.md       Phase 2 on the server: runtime, harness, run procedure, risks
+  chosen-research-questions.md    the 8 RQs + hypotheses we answer
+  research-questions.md           candidate RQs with scores (/10)
+  datasets.md                     candidate datasets
   open-questions.md               decisions we still need to make
   papers/<firstauthor>-<year>.md  one summary per paper, written by its owner
 papers/                           PDFs of the literature
-poster/                           poster source and exported PDF (Phase 1)
+poster/                           figures (+ script) and exported PDF (Phase 1)
 experiments/                      Phase 2: harness/, configs/, spikes/, results/raw/, analysis/
 report/                           Phase 2: final report
 scratch/, temp/                   personal throwaway space (git-ignored)
@@ -76,8 +80,8 @@ there is real content for them — no placeholder files.
 |---|---|---|
 | Jan | Fernandez et al., ACL 2025 | `notes/papers/fernandez-2025.md` |
 | Asia | Liu et al., TACL 2024 (Lost in the Middle) | `notes/papers/liu-2024.md` |
-| Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | — |
-| Valeria | Kwon et al., SOSP 2023 (PagedAttention) | — |
+| Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | `notes/papers/zine-2026.md` |
+| Valeria | Kwon et al., SOSP 2023 (PagedAttention) | `notes/papers/kwon-2023.md` |
 
 Each paper summary has the same sections: *In short · Setup · Key findings ·
 Limitations · What it means for our project*. Every number cites a figure,
@@ -85,8 +89,9 @@ table or section of the paper. Our own interpretation is marked as such.
 
 ### Hardware
 
-- Experiments (Phase 2): server with **2 × NVIDIA RTX 4080 (16 GB VRAM each)**,
-  32 GB RAM, running vLLM. 16 GB per GPU means 3–4B models in bf16 (or a
+- Experiments (Phase 2): Science Club server with **2 × NVIDIA RTX 4080 (16 GB
+  VRAM each)**, 32 GB RAM, shared, probably no root (see
+  `notes/06-implementation-plan.md`), running vLLM. 16 GB per GPU means 3–4B models in bf16 (or a
   quantised 8B). An 8B model in bf16 needs about 16 GB for weights alone.
 - Development: macOS laptop, 48 GB RAM. No CUDA, so no vLLM energy measurements
   there. Use it for harness code, tests and dry runs. Reported numbers come

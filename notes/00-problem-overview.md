@@ -21,15 +21,18 @@ So there is a three-way trade-off: **energy ↔ answer quality ↔ memory (cache
 > How much energy can context management and KV-cache reuse save in multi-turn
 > conversations, and what does it cost in answer quality?
 
-## Sub-questions (from the course brief) + our working hypotheses
+## Research questions
 
-More candidates and their scores: [`research-questions.md`](research-questions.md).
+We answer 8 research questions, RQ1–RQ8, each with one hypothesis:
+[`chosen-research-questions.md`](chosen-research-questions.md). They cover the
+three sub-questions of the course brief:
 
-| # | Research question | Working hypothesis (to be tested, NOT a result) |
-|---|---|---|
-| RQ1 | How does energy per turn grow with conversation length when the full history is resent, with and without cache reuse? | Without reuse, prefill energy per turn grows ~linearly with history length (total ~quadratic). With prefix caching, per-turn prefill cost becomes ~constant (only new tokens), but decode cost still grows slowly because each generated token attends to the whole cached context. Total energy savings will be **smaller than token savings**, because decode is unchanged. |
-| RQ2 | How do context strategies (full history, sliding window, summarised history, rolling summary) compare in energy and answer quality? What is the break-even point of summarisation? | Sliding window and summarisation bound the token count, but they **change the prompt prefix** and destroy prefix cache reuse. In short dialogues, summarisation adds the heavy decode overhead of its own calls without saving enough prefill work (net energy loss). Beyond a break-even conversation length ($T^*$), summarisation may save net energy. For quality, sliding window drops early turns, full history suffers from "Lost in the Middle" (Liu et al.), and summaries risk abstraction drift. |
-| RQ3 | Do API prompt caching and energy estimation tools agree: does EcoLogits account for cached tokens? | API providers report cached tokens and bill them at a discount (evidence that less compute is done), but EcoLogits' estimate is driven mainly by model size and **output** tokens, so it will report (nearly) the same energy with and without caching `[UNVERIFIED — check EcoLogits methodology docs]`. |
+| Brief sub-question | Our RQs |
+|---|---|
+| 1. How does energy per turn grow with conversation length, with and without cache reuse? | RQ1, RQ2 |
+| 2. How do context strategies (full history, sliding window, summarised history) compare in energy and answer quality? | RQ3–RQ6 |
+| 3. Do API prompt caching and energy-estimation tools agree: does EcoLogits account for cached tokens? | RQ8 |
+| (topic: the KV cache is a limited resource) | RQ7 |
 
 ## Why this matters (sustainability angle)
 
@@ -47,7 +50,8 @@ More candidates and their scores: [`research-questions.md`](research-questions.m
 - Text-only multi-turn chat, no tool use or RAG. Single user; concurrent users
   only as a stretch goal.
 - One small open-weight model family (3–4B) served by **vLLM** on our own
-  RTX 4080 GPUs. For RQ3, a free API tier or documentation analysis only.
+  RTX 4080 GPUs. For RQ3, we apply EcoLogits' formula to our own runs; a free API tier
+  only if one reports cached tokens and is supported by EcoLogits.
 - Energy = GPU (+ CPU if measurable) energy during inference, idle-subtracted.
   Embodied emissions are out of scope (mentioned as a limitation).
 - Quality = accuracy on our own conversation set: recall of facts planted in
