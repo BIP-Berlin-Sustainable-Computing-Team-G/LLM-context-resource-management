@@ -11,4 +11,6 @@ Student research project (Sustainable Computing, TU Berlin, Erasmus, 2026/27).
 Start here:
 1. [`BIP-note-topic-requirements.txt`](BIP-note-topic-requirements.txt) — course brief
 2. [`CLAUDE.md`](CLAUDE.md) — repository rules (English only, phases, AI usage, experiment hygiene)
-3. [`notes/`](notes/) — read `00` → `05` in order; open decisions in `notes/open-questions.md`
+3. [`notes/`](notes/) — read `00` → `06` in order; the 8 research questions are in
+   `notes/chosen-research-questions.md`, open decisions in `notes/open-questions.md`
+4. [`poster/`](poster/) — poster figures (regenerate with `python3 poster/figures/make_figures.py`)
