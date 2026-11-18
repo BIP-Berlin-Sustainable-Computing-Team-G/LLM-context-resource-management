@@ -34,8 +34,27 @@ Bytes per token = `2 (K and V) × n_layers × n_kv_heads × head_dim × bytes_pe
   → 8k-token conversation ≈ **1 GiB** of KV cache, per sequence.
 - OPT-13B example from the PagedAttention paper: ~800 KB per token; a 2048-token
   sequence ≈ 1.6 GB.
+- **Qwen3-4B** (our main candidate; 36 layers, 8 KV heads, head_dim 128, bf16 —
+  from its `config.json`, checked 2026-11-17):
+  `2 × 36 × 8 × 128 × 2 = 147,456 B = 144 KiB per token`.
 - **Grouped-query attention (GQA)** shares K/V heads across query heads → smaller
-  cache. (Exam hook: architecture choices directly change cache memory.)
+  cache. Qwen3-4B has 32 query heads but only 8 KV heads, so its cache is 4×
+  smaller than without GQA. (Exam hook: architecture choices directly change cache memory.)
+
+**How many tokens fit on one RTX 4080?** (calculation, our assumptions)
+
+| Item | Value |
+|---|---|
+| GPU memory vLLM may use (`gpu_memory_utilization` 0.9 × 16 GiB) | ≈ 14.4 GiB |
+| Weights: ≈ 4.0 B parameters × 2 bytes (bf16) | ≈ 7.5 GiB |
+| Activations, CUDA graphs, overhead (assumed) | ≈ 1.5 GiB |
+| **Left for the KV cache** | **≈ 5.4 GiB** |
+| ÷ 144 KiB per token | **≈ 39,000 tokens** |
+
+That is the total for *all* conversations held at once. A 40-turn conversation
+from §4 (S=500, u=100, a=300) ends at ≈ 16,200 tokens, so only about **two**
+such conversations fit before vLLM must evict cached blocks or preempt requests.
+To check on the server: vLLM prints the real KV capacity at start-up.
 
 KV cache is a **limited resource**: GPU memory not used for weights is shared by
 all concurrent sequences. Bigger caches → fewer concurrent requests (smaller
@@ -78,6 +97,27 @@ underestimate real energy. That gap is exactly what we want to measure.
 - Consequence: reuse works **only for an identical prefix**. Changing one token
   early in the prompt invalidates all following blocks.
 
+What the current vLLM docs say (checked 2026-11-17, links in `02-literature.md`):
+- A block's hash = hash(parent block hash, the block's tokens, extra keys such as
+  LoRA ID or cache salt). The parent hash chains the whole prefix into it.
+- **Only full blocks are cached.** A partly filled last block is recomputed.
+- Freed blocks stay in the cache until memory is needed; then the **least
+  recently used** block is evicted.
+- Switch: `--enable-prefix-caching` / `--no-enable-prefix-caching`. Which one is
+  the default depends on the version → check `vllm serve --help` on the
+  version we pin and always set the flag explicitly.
+
+Figure 2 on the poster (`poster/figures/make_figures.py`) works through §4's
+token model for three strategies with caching on (calculation, 40 turns):
+
+| Strategy | Tokens prefilled in total | Prompt length at turn 40 |
+|---|---|---|
+| Full history | 16,200 | 16,200 |
+| Sliding window, last 5 turns | 74,000 | 2,600 |
+| Chunked window, drop 5 turns every 5 turns | 26,400 | 4,200 |
+
+The sliding window holds 6× less context but prefills 4.6× more tokens.
+
 ## 6. Context-management strategies and their interaction with caching
 
 | Strategy | Tokens per turn | Prefix stable? | Information loss | Extra cost |
@@ -112,15 +152,26 @@ Liu et al. (2024): model accuracy is highest when relevant information is at the
 - Summarisation/truncation might hurt less than expected — or even help — when
   the relevant information would otherwise sit in the middle.
 - Our quality test must control *where* (which turn) the needed information is.
+- Small models may behave differently: Llama-2 7B was only recency-biased, and
+  the U shape appeared from 13B up (Liu et al., App. E). Our 3–4B models may
+  therefore lose little when early turns are dropped (hypothesis H6, `chosen-research-questions.md`).
 
 ## 8. API prompt caching (provider side)
 
-- Providers (e.g. OpenAI, Anthropic, Google) cache prompt prefixes and report
-  cached input tokens in the API response usage fields; cached tokens are billed
-  at a large discount. Details differ: automatic vs explicit cache markers,
-  minimum cacheable length, cache lifetime (minutes), pricing of cache writes.
-  `[UNVERIFIED — check and cite current official docs with date before the poster]`
-- We cannot measure provider energy directly → we rely on **estimation tools**.
+Providers cache prompt prefixes too, report the cached input tokens in the
+usage data and bill them at a discount. From the official docs, checked
+2026-11-17 (these details change often — re-check before quoting):
+
+| Provider | How it is switched on | Minimum length | Lifetime | Usage field | Price of a cached token |
+|---|---|---|---|---|---|
+| OpenAI | automatic | 1,024 tokens (newer models) | ≥ 5–30 min, up to 24 h | `cached_tokens` | 0.1× input (newer models) |
+| Anthropic | `cache_control` (one top-level field, or up to 4 breakpoints) | 512–4,096 by model | 5 min (or 1 h) | `cache_read_input_tokens` | 0.1× input (some models less); writes cost 1.25× / 2× |
+| Google Gemini | implicit, on by default for 2.5+ | 2,048–4,096 by model | not stated | cached token count in usage metadata | discount, size not stated |
+
+- The prices show that a cache hit saves the provider compute. **How much
+  energy** it saves is not published.
+- The same prefix rule applies: a hit needs an identical prefix.
+- We cannot measure provider energy → we rely on **estimation tools** (RQ8).
 
 ## 9. Measuring and estimating energy
 
@@ -137,11 +188,19 @@ Liu et al. (2024): model accuracy is highest when relevant information is at the
 - Always subtract idle baseline and report hardware.
 
 **Estimation (APIs, no hardware access):**
-- **EcoLogits**: estimates energy and environmental impacts of API calls from
-  model (active parameter count, possibly estimated for closed models), number of
-  generated tokens, and infrastructure assumptions (PUE, GPU count, electricity
-  mix). Whether/how **input or cached tokens** enter the formula is the core of
-  RQ3. `[UNVERIFIED — read EcoLogits methodology page and cite version]`
+- **EcoLogits** (methodology page checked 2026-11-17; no version shown on it):
+  - GPU energy per request: `E_GPU = T_out × f_E(P_active, B)`. It is linear in
+    the number of **output** tokens `T_out`, with a fitted function of the active
+    parameter count and a fixed batch size B = 64.
+  - Rest of the server: `ΔT × 1.2 kW × (GPUs / 8) / B`, where the latency
+    `ΔT = TTFT + T_out / TPS` uses average provider statistics.
+  - Request energy = PUE × (server + GPU energy); then × grid intensity for CO₂.
+  - **Input tokens and cached tokens are not in the formula.** Input length
+    enters only indirectly, through the average TTFT of the model. So the
+    estimate is the same for turn 1 and turn 40, with or without a cache hit.
+- This moves RQ8 from "does it?" (answered by the docs: no) to **"how wrong
+  is it?"** We compare its estimate with our measured energy per turn, cache on
+  and off.
 
 **Energy → carbon:** `CO₂eq = energy × grid carbon intensity (gCO₂/kWh)`.
 Location and time of day matter; we report energy as the primary metric.
