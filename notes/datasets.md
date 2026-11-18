@@ -8,8 +8,8 @@ size before citing or downloading.
 
 | Need | Used for | Requirement |
 |---|---|---|
-| Realistic multi-turn transcripts | RQ1, RQ3 (energy) | Real turn lengths and conversation lengths; text, not only token counts |
-| Questions with known answers about earlier turns | RQ2, RQ3 (quality) | Ground truth, and the answer sits in a known turn |
+| Realistic multi-turn transcripts | RQ1–RQ5 (energy) | Real turn lengths and conversation lengths; text, not only token counts |
+| Questions with known answers about earlier turns | RQ3–RQ6 (quality) | Ground truth, and the answer sits in a known turn |
 | Fits our hardware | all | 2 × RTX 4080 (16 GB) → 3–4B model; KV cache must fit next to the weights, so roughly ≤ 8–16k tokens of context (our assumption, to check) |
 | Usable licence | all | Allows research use |
 
@@ -24,11 +24,11 @@ No ground-truth answers, so not usable for quality.
 | WildChat | arXiv:2405.01470 | ~1M real ChatGPT conversations, many multi-turn | `[UNVERIFIED]` |
 | UltraChat | arXiv:2305.14233 | Synthetic multi-turn dialogues | `[UNVERIFIED]` |
 
-## 2. Multi-turn quality benchmarks (RQ2)
+## 2. Multi-turn quality benchmarks (RQ3–RQ6)
 
 | Dataset | Source | What it tests | Fit for us | Status |
 |---|---|---|---|---|
-| LoCoMo | arXiv:2402.17753 | Very long conversations with questions about earlier turns | Good: ≈10–21k tokens per conversation, evidence turns annotated — see [details below](#locomo-in-detail) | Data checked 2026-11-17; paper ID `[UNVERIFIED]` |
+| LoCoMo | arXiv:2402.17753 | Very long conversations with questions about earlier turns | Good: ≈10–21k tokens per conversation, evidence turns annotated — see [details below](#locomo-in-detail) | Data checked 2026-11-17; paper: Maharana et al., arXiv:2402.17753 (checked 2026-11-17) |
 | LongMemEval | arXiv:2410.10813 | Long-term chat memory across sessions | Histories ~100k+ tokens → only a subset or shortened version fits | `[UNVERIFIED]` |
 | MT-Bench-101 | arXiv:2402.14762 | Fine-grained multi-turn abilities (recall, follow-up, …) | Possible | `[UNVERIFIED]` |
 | MT-Eval | arXiv:2401.16745 | Multi-turn abilities incl. recollection | Possible | `[UNVERIFIED]` |
@@ -91,13 +91,15 @@ The file does not name the categories. Commonly cited mapping:
 **What this means for us** (our interpretation)
 
 - **Evidence turn IDs** let us check, per strategy, whether the turn needed for
-  an answer was still in the context → explains *why* quality drops (RQ2).
+  an answer was still in the context → explains *why* quality drops (RQ6).
 - **`session_summary`** can serve as a reference summary. For energy we still
   generate our own summaries, otherwise their cost is not counted (CLAUDE.md §6).
 - **Fits our hardware, but not by much** (calculation): ≈21k tokens ×
   ≈112 KiB/token (3B model with 28 layers, 8 KV heads, head dim 128, bf16 —
   `[UNVERIFIED]`, check model config) ≈ 2.3 GiB KV cache + ≈6.4 GB weights
   → fits on one 16 GB RTX 4080. vLLM `max_model_len` must be ≥ ~24k.
+  With Qwen3-4B (144 KiB/token, checked): ≈ 2.9 GiB, still fits, but it uses
+  over half of the ≈ 39k-token KV budget (`01-theory.md` §3).
 - **Category 5** cannot be scored with token-F1 (correct answer is "not
   mentioned") → score separately or exclude.
 - **Not a user–assistant chat:** two people, short turns (≈20–25 words per
@@ -132,13 +134,13 @@ Build conversations ourselves: filler turns (e.g. taken from ShareGPT/WildChat)
 plus one fact planted at a chosen turn, then a question about it at the end.
 
 - **Pro:** we control conversation length and the position of the fact exactly
-  → clean analysis for RQ2/RQ3, easy to explain in the exam.
+  → clean analysis for RQ6, easy to explain in the exam.
 - **Con:** less realistic; generator code needs unit tests (CLAUDE.md §6).
 
 ## Current suggestion (to discuss)
 
-- **Energy (RQ1, RQ3):** replay transcripts from ShareGPT or WildChat.
-- **Quality (RQ2, RQ3):** LoCoMo, or synthetic planted-fact conversations.
+- **Energy (RQ1–RQ5):** replay transcripts from ShareGPT or WildChat.
+- **Quality (RQ3–RQ6):** LoCoMo, or synthetic planted-fact conversations.
 
 ## To check before deciding
 
