@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poster Variant 2: Modern Infographic - Context Windows & KV-Cache Reuse</title>
+<style>
+  @page {
+    size: 1189mm 841mm; /* A0 Landscape */
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #0d151c;
+    color: #e2e8f0;
+    line-height: 1.45;
+    padding: 24px;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  @media print {
+    body {
+      max-width: none;
+      width: 1189mm;
+      height: 841mm;
+      padding: 15mm;
+      background: #0d151c !important;
+      -webkit-print-color-adjust: exact;
+    }
+  }
+
+  /* Header */
+  .hero-header {
+    background: radial-gradient(circle at 10% 20%, #17383c 0%, #0d1c24 90%);
+    border: 1px solid #1f4e5b;
+    border-radius: 16px;
+    padding: 30px 40px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .tagline {
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .tagline::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2dd4bf;
+    box-shadow: 0 0 10px #2dd4bf;
+  }
+  h1 {
+    font-size: 38px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 19px;
+    color: #94a3b8;
+    max-width: 850px;
+  }
+  .team-box {
+    text-align: right;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    border-radius: 12px;
+    padding: 18px 24px;
+  }
+  .team-names {
+    font-size: 17px;
+    font-weight: 700;
+    color: #38bdf8;
+  }
+  .team-univ {
+    font-size: 13.5px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+
+  /* 4-Column Layout */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: 28% 24% 24% 24%;
+    gap: 20px;
+  }
+  @media (max-width: 1200px) {
+    .poster-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Cards */
+  .post-card {
+    background: #15222e;
+    border: 1px solid #1e3345;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    margin-bottom: 20px;
+  }
+  .post-card-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #223c52;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .post-card-title .icon {
+    background: #0284c7;
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+  }
+  ul {
+    margin-left: 18px;
+    font-size: 13.5px;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+  }
+  li {
+    margin-bottom: 6px;
+  }
+
+  /* Big Metric Hero Callouts */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .stat-box {
+    background: #0d1822;
+    border: 1px solid #233e54;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: 26px;
+    font-weight: 900;
+    color: #2dd4bf;
+  }
+  .stat-val.red {
+    color: #f87171;
+  }
+  .stat-lbl {
+    font-size: 11.5px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  /* Figure Containers */
+  .fig-wrap {
+    background: #0b141d;
+    border: 1px solid #1f374c;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .fig-wrap img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+  .fig-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* Highlight Banner */
+  .highlight-banner {
+    background: linear-gradient(90deg, rgba(45, 212, 191, 0.12) 0%, rgba(56, 189, 248, 0.12) 100%);
+    border: 1px solid rgba(45, 212, 191, 0.4);
+    border-radius: 10px;
+    padding: 14px;
+    margin: 12px 0;
+  }
+  .highlight-banner strong {
+    color: #2dd4bf;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .highlight-banner p {
+    font-size: 13px;
+    color: #e2e8f0;
+    margin-bottom: 0;
+  }
+
+  /* Table */
+  .dark-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin: 10px 0;
+  }
+  .dark-table th {
+    background: #0d1b26;
+    color: #38bdf8;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid #233e54;
+  }
+  .dark-table td {
+    padding: 7px 10px;
+    border: 1px solid #1c3347;
+    color: #cbd5e1;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO HEADER -->
+<div class="hero-header">
+  <div>
+    <div class="tagline">Sustainable Computing · TU Berlin · Erasmus Project</div>
+    <h1>Context Windows & KV-Cache Reuse</h1>
+    <div class="subtitle">The Net Energy Overhead of Context Summarisation vs. Prefix Caching in Multi-Turn Chat</div>
+  </div>
+  <div class="team-box">
+    <div class="team-names">Jan • Asia • Lena • Valeria</div>
+    <div class="team-univ">TU Berlin · ISIS Research Group</div>
+    <div style="margin-top: 8px; display: inline-block; background: #0284c7; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+      Phase 1: Research Plan & Hypotheses
+    </div>
+  </div>
+</div>
+
+<!-- 4-COLUMN POSTER GRID -->
+<div class="poster-grid">
+
+  <!-- ================= COL 1: THE ENERGY FOUNDATION ================= -->
+  <div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">1</span>
+        The Multi-Turn Scaling Crisis
+      </div>
+      <p>
+        In production dialogue, LLMs are stateless. Each message resends the entire history, triggering quadratic prefill:
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-val red">88,000</div>
+          <div class="stat-lbl">Tokens (No Cache, T=20)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">8,200</div>
+          <div class="stat-lbl">Tokens (Prefix Cache, T=20)</div>
+        </div>
+      </div>
+
+      <div class="fig-wrap">
+        <img src="figures/fig1_token_growth.png" alt="Prefill Token Growth">
+        <div class="fig-desc">Fig. 1: Analytical prefill token volume across 25 turns (10.7&times; reduction).</div>
+      </div>
+
+      <div class="highlight-banner">
+        <strong>The Energy Discrepancy (Fernandez et al., ACL 2025):</strong>
+        <p>A 90% reduction in tokens does <em>not</em> yield a 90% reduction in energy! Decode is memory-bandwidth bound and consumes significantly more Joules per token than prefill.</p>
+      </div>
+    </div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">2</span>
+        KV-Cache & vLLM Architecture
+      </div>
+      <p>
+        <strong>KV-Cache Footprint:</strong> Storing intermediate attention vectors requires <code>128 KiB/token</code> (Llama-3-8B FP16) &rarr; <strong>1 GB VRAM per 8k context</strong>.
+      </p>
+      <p>
+        <strong>PagedAttention (Kwon et al., SOSP 2023):</strong> Pages KV-cache into 16-token non-contiguous blocks. Prefix caching reuses blocks matching previous prompt hash sequences.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ================= COL 2: CONTEXT PARADOX & QUALITY ================= -->
+  <div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">3</span>
+        The Context-Cache Paradox
+      </div>
+      <p>
+        To prevent GPU Out-Of-Memory errors, developers truncate or summarize conversations. <strong>This actively breaks prefix caching!</strong>
+      </p>
+
+      <div class="fig-wrap">
+        <img src="figures/fig3_context_tradeoff.png" alt="Context Strategies Trade-off">
+        <div class="fig-desc">Fig. 2: Block-level cache interaction of context management strategies.</div>
+      </div>
+
+      <ul>
+        <li><strong>Sliding Window:</strong> Shifts the start token &rarr; <strong>100% Cache Miss</strong> on every subsequent turn.</li>
+        <li><strong>Summarisation:</strong> Rewrites the prompt prefix &rarr; Invalidation + heavy autoregressive <em>decode energy tax</em>.</li>
+      </ul>
+    </div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">4</span>
+        Quality: "Lost in the Middle"
+      </div>
+      <p>
+        Is keeping full history the quality ideal? <strong>No!</strong> Liu et al. (TACL 2024) prove LLMs suffer from severe positional bias:
+      </p>
+
+      <div class="fig-wrap">
+        <img src="figures/fig2_lost_in_the_middle_vector.png" alt="Lost in the Middle Vector Curve">
+        <div class="fig-desc">Fig. 3: U-shaped accuracy degradation (Liu et al., 2024). Facts placed in the middle drop below closed-book accuracy.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= COL 3: BREAK-EVEN & RQs ================= -->
+  <div>
+
+    <div class="post-card" style="border-color: #2dd4bf;">
+      <div class="post-card-title" style="color: #2dd4bf;">
+        <span class="icon" style="background: #0d9488;">RQ</span>
+        Core Research Questions
+      </div>
+
+      <div class="highlight-banner" style="background: rgba(45, 212, 191, 0.15); border-color: #2dd4bf;">
+        <strong>RQ2 / O2: The Break-Even Analysis</strong>
+        <p><em>What is the net energy overhead of context summarization, and at what conversation length (T*) does it reach a break-even point compared to KV-cache reuse?</em></p>
+      </div>
+
+      <p style="font-size: 13px;">
+        <strong>Hypothesis:</strong> In short-to-medium dialogues, generating summaries costs more Joules than it saves in prefill. Only past <code>T*</code> turns does the reduced sequence length offset the continuous decode tax.
+      </p>
+
+      <div class="highlight-banner" style="margin-top: 14px;">
+        <strong style="color: #38bdf8;">RQ1: Energy vs. Token Divergence</strong>
+        <p>Without caching, prefill energy grows linearly with turn length. With prefix caching, per-turn prefill cost stays flat, but total energy savings lag far behind token savings due to decode dominance.</p>
+      </div>
+
+      <div class="highlight-banner" style="margin-top: 14px;">
+        <strong style="color: #e2e8f0;">RQ3: Auditor Tooling (EcoLogits)</strong>
+        <p>Commercial carbon estimators model output tokens and model size, omitting input token reuse. Do they report false footprints for prompt-cached APIs?</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= COL 4: EXPERIMENTAL METHODOLOGY ================= -->
+  <div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">5</span>
+        Container Ablation Matrix
+      </div>
+      <p>
+        Phase 2 deploys an ablation matrix of Docker containers on our dedicated server:
+      </p>
+
+      <div class="fig-wrap">
+        <img src="figures/fig4_container_architecture.png" alt="System Architecture">
+        <div class="fig-desc">Fig. 4: End-to-end replay harness, container ablation, and instrumentation.</div>
+      </div>
+
+      <table class="dark-table">
+        <tr><th>Container</th><th>Configuration</th></tr>
+        <tr><td><strong>Cont. 0</strong></td><td>Baseline: Prefix Caching OFF</td></tr>
+        <tr><td><strong>Cont. A</strong></td><td>Prefix Caching ON (vLLM)</td></tr>
+        <tr><td><strong>Cont. B</strong></td><td>Sliding Window (5 msgs), Cache OFF</td></tr>
+        <tr><td><strong>Cont. C</strong></td><td>Rolling Summary, Cache OFF</td></tr>
+        <tr><td><strong>Cont. D</strong></td><td><strong>Mega-Optimized:</strong> Cache ON + Chunked Window</td></tr>
+      </table>
+    </div>
+
+    <div class="post-card">
+      <div class="post-card-title">
+        <span class="icon">6</span>
+        Hardware & Protocol
+      </div>
+      <ul>
+        <li><strong>Server:</strong> 2 &times; NVIDIA RTX 4080 (16 GB VRAM). Single GPU per run to avoid tensor parallelism overhead (+29–55% energy).</li>
+        <li><strong>Measurement:</strong> CodeCarbon + direct NVML energy counters. Warm-ups discarded, idle power subtracted.</li>
+        <li><strong>Evaluation:</strong> Recall of facts planted at Early (T1–3), Middle (T10–15), and Recent turns.</li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

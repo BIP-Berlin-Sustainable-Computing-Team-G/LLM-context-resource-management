@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poster Variant 3: Systems & Engineering Focus - Context Windows & KV-Cache Reuse</title>
+<style>
+  @page {
+    size: 841mm 1189mm; /* A0 Portrait */
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+    line-height: 1.45;
+    padding: 24px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media print {
+    body {
+      max-width: none;
+      width: 841mm;
+      height: 1189mm;
+      padding: 18mm;
+      background: white !important;
+    }
+  }
+
+  /* Header */
+  .eng-header {
+    background: #0f172a;
+    color: white;
+    padding: 32px 36px;
+    border-radius: 8px;
+    border-bottom: 5px solid #2563eb;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .eng-header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .eng-header .subtitle {
+    font-size: 19px;
+    color: #94a3b8;
+  }
+  .eng-header .meta {
+    font-size: 15px;
+    color: #38bdf8;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .eng-badge {
+    text-align: right;
+    border-left: 2px solid #334155;
+    padding-left: 24px;
+  }
+  .eng-badge .inst {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+  .eng-badge .details {
+    font-size: 13.5px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+
+  /* 2-Column Split Layout */
+  .eng-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 1000px) {
+    .eng-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Panels */
+  .panel {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 22px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .panel-header h2 {
+    font-size: 19px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0f172a;
+  }
+  .panel-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  p {
+    font-size: 14px;
+    color: #334155;
+    margin-bottom: 10px;
+    text-align: justify;
+  }
+  ul {
+    margin-left: 20px;
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 10px;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+
+  /* Code / Spec Box */
+  .spec-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12.5px;
+    color: #1e293b;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Figures */
+  .fig-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .fig-box img {
+    max-width: 100%;
+    height: auto;
+  }
+  .fig-lbl {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* Table */
+  table.eng-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  table.eng-table th {
+    background: #0f172a;
+    color: white;
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+  }
+  table.eng-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  table.eng-table tr:hover {
+    background: #f1f5f9;
+  }
+
+  /* Research Question Highlight */
+  .rq-container {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 14px;
+    margin: 14px 0;
+  }
+  .rq-container h3 {
+    font-size: 15px;
+    color: #1d4ed8;
+    margin-bottom: 6px;
+  }
+  .rq-container p {
+    font-size: 13px;
+    color: #1e3a8a;
+    margin-bottom: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="eng-header">
+  <div>
+    <h1>Context Windows & KV-Cache Reuse</h1>
+    <div class="subtitle">System Architecture, Runtime Memory Management, and Energy Profiling in Multi-Turn LLMs</div>
+    <div class="meta">Jan • Asia • Lena • Valeria &nbsp;|&nbsp; Sustainable Computing (TU Berlin)</div>
+  </div>
+  <div class="eng-badge">
+    <div class="inst">TU Berlin · ISIS Research</div>
+    <div class="details">Phase 1 Poster Defence · Nov 2026</div>
+    <div class="details" style="color: #38bdf8; font-weight: bold; margin-top: 4px;">Hardware: 2&times; NVIDIA RTX 4080 (16GB)</div>
+  </div>
+</div>
+
+<!-- 2-COLUMN GRID -->
+<div class="eng-grid">
+
+  <!-- ================= LEFT COLUMN: WORKLOAD & RUNTIME THEORY ================= -->
+  <div>
+
+    <!-- Section 1: Workload & Memory Scaling -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>1. The Workload & Memory Scaling Problem</h2>
+        <span class="panel-tag">Workload Profile</span>
+      </div>
+      <p>
+        In multi-turn chat serving, every new request re-sends the cumulative dialogue history. Because transformers require causal attention across all prior tokens, the prefill computational burden scales quadratically with turn count <code>T</code>:
+      </p>
+      
+      <div class="spec-box">
+        // Prefill token volume per dialogue (S=500, u=100, a=300 tokens)<br>
+        No Cache:       &Sigma; L_t = T&middot;S + m&middot;T(T-1)/2 + T&middot;u  == O(T&sup2;)<br>
+        Prefix Caching: &asymp; S + u + (T-1)&middot;m                       == O(T)
+      </div>
+
+      <div class="fig-box">
+        <img src="figures/fig1_token_growth.png" alt="Token Growth Derivation">
+        <div class="fig-lbl">Fig. 1: Analytical comparison of prefilled tokens across 25 conversation turns.</div>
+      </div>
+
+      <p>
+        <strong>KV-Cache VRAM Demand:</strong> In modern architectures, KV cache scales as <code>2 &times; layers &times; kv_heads &times; head_dim &times; bytes</code> per token. For an 8B parameter model (FP16), this consumes <strong>~128 KiB per token (~1 GiB per 8k context)</strong>, directly constraining concurrent batch size and triggering preemption under high multi-tenant load.
+      </p>
+    </div>
+
+    <!-- Section 2: vLLM PagedAttention & Block Reuse -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>2. Runtime Stack: PagedAttention & Prefix Caching</h2>
+        <span class="panel-tag">Engine Architecture</span>
+      </div>
+      <p>
+        <strong>PagedAttention (Kwon et al., SOSP 2023):</strong> Traditional serving frameworks allocated contiguous VRAM for maximum sequence lengths, resulting in 60–80% internal/external fragmentation. vLLM organizes KV cache into fixed-size physical blocks (16 tokens), achieving &lt;4% waste and enabling dynamic memory sharing via block tables.
+      </p>
+      <p>
+        <strong>Automatic Prefix Caching (APC):</strong> Reusable blocks are indexed by a recursive cryptographic hash of their tokens and all preceding blocks:
+      </p>
+      <div class="spec-box">
+        Block_Hash(k) = SHA256(Block_Hash(k-1) + Tokens(k))
+      </div>
+      <p>
+        <strong>The Prefix Invalidation Rule:</strong> Cache lookup matches sequentially from token index 0. If token index <code>i</code> changes, <em>every subsequent block is invalidated</em>, forcing complete recomputation.
+      </p>
+    </div>
+
+    <!-- Section 3: The Context Management Trade-Off -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>3. Application Context Strategies vs. Engine Reuse</h2>
+        <span class="panel-tag">Systems Trade-Off</span>
+      </div>
+      <p>
+        Application-level context pruning strategies clash directly with runtime block reuse:
+      </p>
+
+      <div class="fig-box">
+        <img src="figures/fig3_context_tradeoff.png" alt="Context Strategies Interaction">
+        <div class="fig-lbl">Fig. 2: Interaction between prompt formatting strategies and physical KV-cache block validity.</div>
+      </div>
+
+      <table class="eng-table">
+        <tr><th>Strategy</th><th>Prefix Hash Stability</th><th>Engine Cache Hit</th><th>VRAM & Energy Behavior</th></tr>
+        <tr><td><strong>Full History</strong></td><td>Strictly Stable</td><td><strong>Near 100%</strong></td><td>Growing VRAM; attention read overhead</td></tr>
+        <tr><td><strong>Sliding Window</strong></td><td>Shifts Every Turn</td><td><strong>0% (Full Miss)</strong></td><td>Bounded VRAM; redundant prefill computation</td></tr>
+        <tr><td><strong>Summarisation</strong></td><td>Altered Prefix</td><td><strong>0% (Miss)</strong></td><td>Bounded VRAM; expensive autoregressive decode tax</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ================= RIGHT COLUMN: EXPERIMENTAL ARCHITECTURE ================= -->
+  <div>
+
+    <!-- Section 4: Accuracy & Lost in the Middle -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>4. Accuracy Trade-Off: "Lost in the Middle"</h2>
+        <span class="panel-tag">Evaluation Baseline</span>
+      </div>
+      <p>
+        Full history cannot be treated as a loss-free accuracy baseline. <strong>Liu et al. (TACL 2024)</strong> demonstrate that decoder-only models exhibit a U-shaped accuracy degradation curve:
+      </p>
+
+      <div class="fig-box">
+        <img src="figures/fig2_lost_in_the_middle_vector.png" alt="Lost in the Middle Curve" style="max-height: 250px;">
+        <div class="fig-lbl">Fig. 3: Retrieval degradation across prompt position (Liu et al., 2024). Facts in intermediate turns drop below closed-book accuracy.</div>
+      </div>
+      <p>
+        <em>Implication:</em> Truncation and summarisation are not purely performance optimizations; they can prevent intermediate conversational instructions from being lost in the attention blind spot.
+      </p>
+    </div>
+
+    <!-- Section 5: Research Questions & Hypotheses -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>5. Research Questions & Hypotheses</h2>
+        <span class="panel-tag">Scientific Goals</span>
+      </div>
+
+      <div class="rq-container">
+        <h3>RQ1 (Energy Scaling & Prefill/Decode Divergence)</h3>
+        <p><strong>Question:</strong> How does per-turn energy scale with conversation length under prefix caching?</p>
+        <p><strong>Hypothesis:</strong> Prefix caching flattens prefill energy, but because decode operations dominate power draw per token (Fernandez et al., ACL 2025), total energy savings will be significantly smaller than token savings.</p>
+      </div>
+
+      <div class="rq-container" style="background: #fef2f2; border-color: #fca5a5;">
+        <h3 style="color: #b91c1c;">RQ2 / O2 (The Break-Even Analysis - Primary Contribution)</h3>
+        <p style="color: #7f1d1d;"><strong>Question:</strong> What is the net energy overhead of context summarization, and at what conversation length does it reach a break-even point compared to KV-cache reuse?</p>
+        <p style="color: #7f1d1d;"><strong>Hypothesis:</strong> In short dialogues (<code>T &lt; T*</code>), summarisation incurs a net energy loss due to autoregressive generation overhead. Only past a critical length <code>T*</code> does the reduced prefill length compensate for summarisation decode costs.</p>
+      </div>
+
+      <div class="rq-container">
+        <h3>RQ3 (Carbon Accounting & API Auditing)</h3>
+        <p><strong>Question:</strong> Do estimation tools like EcoLogits account for cached tokens?</p>
+        <p><strong>Hypothesis:</strong> Commercial estimators driving corporate reporting focus on generated tokens, misrepresenting the real energy impact of prompt caching.</p>
+      </div>
+    </div>
+
+    <!-- Section 6: Phase 2 Experimental Plan & Ablation -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>6. Test Harness & Container Ablation Matrix</h2>
+        <span class="panel-tag">Phase 2 Implementation</span>
+      </div>
+      <p>
+        To isolate individual optimization mechanisms from combined effects, Phase 2 implements a multi-container Docker testbed serving vLLM:
+      </p>
+
+      <div class="fig-box">
+        <img src="figures/fig4_container_architecture.png" alt="Container Architecture">
+        <div class="fig-lbl">Fig. 4: Multi-turn test harness, Docker ablation containers, and NVML profiling pipeline.</div>
+      </div>
+
+      <p><strong>Testbed Specifications:</strong></p>
+      <ul>
+        <li><strong>Hardware:</strong> Server with 2 &times; NVIDIA RTX 4080 (16 GB VRAM each). Single-GPU execution (tensor parallelism avoided due to +29–55% energy penalty).</li>
+        <li><strong>Models:</strong> Small open-weight instruct models (Qwen3-4B / Llama-3.2-3B, BF16).</li>
+        <li><strong>Instrumentation:</strong> High-frequency NVML energy counters + CodeCarbon; idle baseline power subtracted; 5 repetitions per condition.</li>
+        <li><strong>Benchmark:</strong> Scripted dialogues with recall probes planted at Early, Middle, and Recent positions.</li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
