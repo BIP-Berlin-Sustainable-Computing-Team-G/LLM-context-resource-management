@@ -12,11 +12,9 @@ Topic: **context windows and KV-cache reuse** in multi-turn LLM conversations.
 > How much energy can context management and KV-cache reuse save in multi-turn
 > conversations, and what does it cost in answer quality?
 
-The problem statement lives in
-[`notes/00-problem-overview.md`](notes/00-problem-overview.md), the 8 chosen research
-questions (RQ1–RQ8) in [`notes/chosen-research-questions.md`](notes/chosen-research-questions.md); the longer list of
-candidate questions with scores is in
-[`notes/research-questions.md`](notes/research-questions.md).
+The four research questions (RQ1–RQ4) and their hypotheses are in
+[`notes/research-questions.md`](notes/research-questions.md), the setup in
+[`notes/implementation.md`](notes/implementation.md).
 The original course brief is in [`BIP-note-topic-requirements.txt`](BIP-note-topic-requirements.txt) — it is the source of truth for requirements.
 
 ## 2. Two phases — always know which one you are in
@@ -50,38 +48,28 @@ Rules that follow from this:
 BIP-note-topic-requirements.txt   course brief (source of truth)
 CLAUDE.md                         this file
 README.md                         short entry point for the team
-notes/                            research notes (Phase 1, kept up to date in Phase 2)
-  00-problem-overview.md          problem statement, scope, glossary
-  01-theory.md                    transformer inference, KV cache, caching, energy
-  02-literature.md                index of papers: owner, PDF, summary link, relevance
-  03-experiment-plan.md           experiment design (draft → protocol for Phase 2)
-  04-poster-plan.md               full poster content (made in Canva), owners, checklist
-  05-exam-prep.md                 likely oral exam questions + short answers
-  06-implementation-plan.md       Phase 2 on the server: runtime, harness, run procedure, risks
-  chosen-research-questions.md    the 8 RQs + hypotheses we answer
-  research-questions.md           candidate RQs with scores (/10)
-  datasets.md                     candidate datasets
-  open-questions.md               decisions we still need to make
-  papers/<firstauthor>-<year>.md  one summary per paper, written by its owner
-papers/                           PDFs of the literature
+notes/
+  research-questions.md           RQ1–RQ4, hypotheses, comments
+  implementation.md               setup, design, measurement, comments
+  study-guide.md                  definitions + likely exam questions
+papers/                           PDFs + one summary per paper (<firstauthor>-<year>.pdf/.md)
 poster/                           figures (+ script) and exported PDF (Phase 1)
 experiments/                      Phase 2: harness/, configs/, spikes/, results/raw/, analysis/
 report/                           Phase 2: final report
 scratch/, temp/                   personal throwaway space (git-ignored)
 ```
 
-Put new notes in `notes/` with a numeric prefix if they belong to the main
-reading order, otherwise a descriptive kebab-case name. Folders are created when
+Keep `notes/` to these few files; extend them instead of adding new ones. Folders are created when
 there is real content for them — no placeholder files.
 
 ### Team and paper ownership
 
 | Member | Paper | Summary |
 |---|---|---|
-| Jan | Fernandez et al., ACL 2025 | `notes/papers/fernandez-2025.md` |
-| Asia | Liu et al., TACL 2024 (Lost in the Middle) | `notes/papers/liu-2024.md` |
-| Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | `notes/papers/zine-2026.md` |
-| Valeria | Kwon et al., SOSP 2023 (PagedAttention) | `notes/papers/kwon-2023.md` |
+| Jan | Fernandez et al., ACL 2025 | `papers/fernandez-2025.md` |
+| Asia | Liu et al., TACL 2024 (Lost in the Middle) | `papers/liu-2024.md` |
+| Lena | Zine, Coignion et al., arXiv:2607.09172 (vLLM configurations) | `papers/zine-2026.md` |
+| Valeria | Kwon et al., SOSP 2023 (PagedAttention) | `papers/kwon-2023.md` |
 
 Each paper summary has the same sections: *In short · Setup · Key findings ·
 Limitations · What it means for our project*. Every number cites a figure,
@@ -89,16 +77,12 @@ table or section of the paper. Our own interpretation is marked as such.
 
 ### Hardware
 
-- Experiments (Phase 2): Science Club server with **2 × NVIDIA RTX 4080 (16 GB
-  VRAM each)**, 32 GB RAM, shared, probably no root (see
-  `notes/06-implementation-plan.md`), running vLLM. 16 GB per GPU means 3–4B models in bf16 (or a
-  quantised 8B). An 8B model in bf16 needs about 16 GB for weights alone.
-- Development: macOS laptop, 48 GB RAM. No CUDA, so no vLLM energy measurements
-  there. Use it for harness code, tests and dry runs. Reported numbers come
-  only from vLLM on the server.
-- **Engine: vLLM** (decided 2026-11-17). Two of the four required papers are
-  about it, so the exam will focus on it. Prefix caching on vs off = two server
-  configurations. Decisions and open points: `notes/open-questions.md`.
+- Experiments and development: MacBook, Apple M5, 48 GB unified memory.
+  Energy from `powermetrics` and CodeCarbon (both need sudo).
+- Backup only: Science Club server, 2 × NVIDIA RTX 4080 (16 GB each).
+- **Engine: `llama-server` (llama.cpp)**, model Qwen3.5-4B GGUF Q4_K_M
+  (decided 2026-11-18). Prompt cache on vs off = two server configurations.
+  Details and risks: `notes/implementation.md`.
 
 ## 5. Working with AI (allowed — but we must understand everything)
 
@@ -128,7 +112,7 @@ Rules for the assistant:
 ## 6. Research & experiment rules (mainly Phase 2, but design them now)
 
 - **Protocol before code.** Every experiment is first described in
-  `notes/03-experiment-plan.md` (hypothesis, independent/dependent variables,
+  `notes/implementation.md` (hypothesis, independent/dependent variables,
   controls, metrics, number of repetitions, analysis) before implementation.
 - **Reproducibility:** fixed seeds, `temperature=0` (or fixed sampling params),
   pinned package versions, record model name + revision, hardware (GPU/CPU model,
@@ -136,7 +120,7 @@ Rules for the assistant:
 - **Energy measurement hygiene:** warm-up runs, ≥5 repetitions per condition
   (more if variance is high), randomised run order, measure and subtract idle
   baseline power, report medians + spread, note the sampling rate of the meter
-  (e.g. `nvidia-smi` sampling limitations — see Zine et al., §VII).
+  (e.g. `powermetrics` interval; `nvidia-smi` limitations in Zine et al., §VII).
 - **Raw data is immutable.** Raw measurements go to `experiments/results/raw/`
   (one file per run, with metadata); analysis reads raw data and writes derived
   data/figures elsewhere. Never hand-edit results.
@@ -162,7 +146,7 @@ Rules for the assistant:
 ## 8. Definition of done
 
 - **Phase 1:** poster PDF in `poster/`, every section traceable to a note in
-  `notes/`, every team member can answer the questions in `notes/05-exam-prep.md`.
+  `notes/`, every team member can answer the questions in `notes/study-guide.md`.
 - **Phase 2:** experiments reproducible from `experiments/README.md` (written
   once the harness exists) with one
   command per experiment, figures regenerated from raw data, report in `report/`.

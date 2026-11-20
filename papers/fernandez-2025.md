@@ -1,7 +1,7 @@
 # Fernandez et al. 2025 — Energy Considerations of LLM Inference and Efficiency Optimizations
 
 J. Fernandez, C. Na, V. Tiwari, Y. Bisk, S. Luccioni, E. Strubell. ACL 2025 (long),
-pp. 32556–32569. doi:10.18653/v1/2025.acl-long.1563 · `papers/2025.acl-long.1563.pdf`
+pp. 32556–32569. doi:10.18653/v1/2025.acl-long.1563 · [PDF](fernandez-2025.pdf)
 Owner: Jan
 
 ## In short
@@ -62,15 +62,13 @@ real-world workloads.
 
 ## What it means for our project
 
-- It gives us the method: separate prefill and decode, and vary input and output
-  length independently. With caching, a turn's prefill only covers the new
-  tokens, so the same decomposition applies **per turn**.
-- Finding 1 → caching probably saves almost nothing until the history is long
-  enough to load the GPU. There should be a break-even history length.
-- Finding 2 → caching only removes prefill work, so its energy saving should be
-  much smaller than its token saving.
-- Finding 3 → a lower TTFT does not mean lower energy. We have to measure both.
-- Finding 4 → single-user (batch 1) and multi-user results can differ, and KV
-  memory is the shared constraint.
-- Finding 6 → token- or FLOP-based estimators (EcoLogits) need checking against
-  measurement.
+- **Method:** separate prefill and decode, and vary input and output length
+  on their own. With caching, a turn's prefill covers only the new tokens, so
+  the same split works per turn (RQ1).
+- Finding 1 → reuse may save almost nothing until the history is long enough
+  to load the chip. Expect a minimum useful length (RQ1).
+- Finding 2 → caching removes only prefill, so energy savings < token
+  savings. Summaries add decode, the expensive part (RQ4).
+- Finding 3 → faster is not cheaper. We log timings but rank by energy.
+- Their measurements are GPU-only on NVIDIA; ours are SoC power on Apple
+  Silicon (our setup, not theirs). Compare trends, not absolute numbers.

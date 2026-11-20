@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poster Variant 1: Academic Classic - Context Windows & KV-Cache Reuse</title>
+<style>
+  @page {
+    size: 841mm 1189mm; /* A0 Portrait */
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f3f6;
+    color: #24292e;
+    line-height: 1.45;
+    padding: 24px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media print {
+    body {
+      max-width: none;
+      width: 841mm;
+      height: 1189mm;
+      padding: 20mm;
+      background: white;
+    }
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1b365d 0%, #0b1f3a 100%);
+    color: white;
+    padding: 36px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-left {
+    flex: 1;
+  }
+  .header-tag {
+    display: inline-block;
+    background: #e67e22;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .header-subtitle {
+    font-size: 20px;
+    color: #cbd5e1;
+    font-weight: 400;
+    margin-bottom: 14px;
+  }
+  .authors {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .affil {
+    font-size: 15px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .header-badge {
+    text-align: right;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px 24px;
+    border-radius: 10px;
+    min-width: 260px;
+  }
+  .header-badge .course {
+    font-size: 16px;
+    font-weight: 700;
+    color: #38bdf8;
+  }
+  .header-badge .term {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-top: 4px;
+  }
+  .header-badge .phase {
+    display: inline-block;
+    margin-top: 10px;
+    background: #10b981;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  /* 3-Column Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 1050px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Section Cards */
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 22px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .card-num {
+    background: #1b365d;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-right: 10px;
+  }
+  .card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.3px;
+  }
+  .card p {
+    font-size: 14.5px;
+    color: #334155;
+    margin-bottom: 10px;
+    text-align: justify;
+  }
+  .card ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #334155;
+  }
+  .card li {
+    margin-bottom: 6px;
+  }
+
+  /* Visual Callouts */
+  .callout {
+    background: #f8fafc;
+    border-left: 4px solid #1b365d;
+    padding: 12px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+    font-size: 13.5px;
+  }
+  .callout-highlight {
+    background: #eff6ff;
+    border-left-color: #2563eb;
+    color: #1e40af;
+    font-weight: 600;
+  }
+  .callout-alert {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+    color: #991b1b;
+  }
+
+  /* Figure Styling */
+  .fig-container {
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    margin: 14px 0;
+  }
+  .fig-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .fig-caption {
+    font-size: 12.5px;
+    color: #64748b;
+    font-style: italic;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Formula Block */
+  .formula-box {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    color: #0f172a;
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  /* Table */
+  table.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  table.custom-table th, table.custom-table td {
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    text-align: left;
+  }
+  table.custom-table th {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  table.custom-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  /* Footer */
+  .footer {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    color: #64748b;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-tag">TU Berlin · Sustainable Computing · Phase 1 Research Poster</div>
+    <h1>Context Windows & KV-Cache Reuse</h1>
+    <div class="header-subtitle">Evaluating the Energy vs. Quality Trade-Off in Multi-Turn LLM Conversations</div>
+    <div class="authors">Jan • Asia • Lena • Valeria</div>
+    <div class="affil">Technische Universität Berlin • Erasmus Research Project • November 2026</div>
+  </div>
+  <div class="header-badge">
+    <div class="course">ISIS Sustainable Computing</div>
+    <div class="term">Exam Defence: Nov 2026</div>
+    <div class="phase">Phase 1: Theory & Design</div>
+  </div>
+</div>
+
+<!-- 3-COLUMN CONTENT -->
+<div class="grid">
+
+  <!-- ================= COLUMN 1 ================= -->
+  <div class="col">
+
+    <!-- Motivation & Problem -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">1</div>
+        <h2>Problem Statement & Motivation</h2>
+      </div>
+      <p>
+        <strong>LLMs are stateless:</strong> in multi-turn dialogues, the full conversational history is re-sent with every new user query. The serving engine must process ("prefill") all prior tokens repeatedly before generating a response.
+      </p>
+      <div class="formula-box">
+        No Cache: &Sigma; L_t = T&middot;S + m&middot;T(T&minus;1)/2 + T&middot;u &rarr; <strong>O(T&sup2;) Workload</strong><br>
+        Prefix Cache: &asymp; S + u + (T&minus;1)&middot;m &rarr; <strong>O(T) Linear Workload</strong>
+      </div>
+      <p>
+        Without reuse, prefill compute grows <em>quadratically</em>. Automatic prefix caching (KV-cache reuse) mitigates this explosion by skipping redundant prefill for identical token sequences.
+      </p>
+
+      <div class="fig-container">
+        <img src="figures/fig1_token_growth.png" alt="Analytical Token Growth">
+        <div class="fig-caption">Fig. 1: Analytical calculation of prefill token volume across 25 turns (S=500, u=100, a=300 tok). Turn 20 yields a 10.7&times; token reduction.</div>
+      </div>
+    </div>
+
+    <!-- Theory: Prefill vs Decode & KV Cache -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">2</div>
+        <h2>Theoretical Background</h2>
+      </div>
+      <p>
+        <strong>Prefill vs. Decode (Fernandez et al., ACL 2025):</strong>
+      </p>
+      <ul>
+        <li><strong>Prefill:</strong> Highly parallel, compute-bound matrix multiplications. Prefix caching strictly eliminates this phase for repeated prefixes.</li>
+        <li><strong>Decode:</strong> Generates tokens sequentially; memory-bandwidth-bound. At each step, weights and the entire KV cache must be streamed from VRAM.</li>
+        <li><strong>Key Insight:</strong> Decode dominates total GPU energy. Caching saves tokens, but energy savings are strictly bounded by decode demands.</li>
+      </ul>
+
+      <div class="callout callout-highlight">
+        <strong>KV-Cache Memory Footprint:</strong><br>
+        Size = <code>2 &times; layers &times; kv_heads &times; head_dim &times; bytes</code><br>
+        For Llama-3-8B (FP16): &asymp; 128 KiB/token &rarr; <strong>1 GB VRAM per 8k context!</strong>
+      </div>
+
+      <p>
+        <strong>PagedAttention (Kwon et al., SOSP 2023):</strong> Stores KV states in non-contiguous 16-token physical blocks, cutting fragmentation from 60–80% to &lt;4%. Prefix blocks are hashed and shared copy-on-write across requests.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ================= COLUMN 2 ================= -->
+  <div class="col">
+
+    <!-- The Core Tension: Strategies -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">3</div>
+        <h2>The Core Tension: Context vs. Cache</h2>
+      </div>
+      <p>
+        To avoid VRAM exhaustion, developers employ context-reduction strategies. However, <strong>truncation and prefix caching pull in opposite directions</strong>:
+      </p>
+
+      <div class="fig-container">
+        <img src="figures/fig3_context_tradeoff.png" alt="Context Strategies Trade-off">
+        <div class="fig-caption">Fig. 2: Block-level impact of context strategies on prefix hashing. Sliding window and naive summarisation invalidate cached blocks.</div>
+      </div>
+
+      <table class="custom-table">
+        <tr>
+          <th>Strategy</th>
+          <th>Prefix Stable?</th>
+          <th>VRAM Impact</th>
+          <th>Energy Penalty</th>
+        </tr>
+        <tr>
+          <td><strong>Full History</strong></td>
+          <td>&check; Yes (Append-only)</td>
+          <td>Scales O(T)</td>
+          <td>Decode attention reads</td>
+        </tr>
+        <tr>
+          <td><strong>Sliding Window</strong></td>
+          <td>&cross; No (Shifts start)</td>
+          <td>Strictly Bounded</td>
+          <td>100% Cache Miss!</td>
+        </tr>
+        <tr>
+          <td><strong>Summarisation</strong></td>
+          <td>&cross; No (New prefix)</td>
+          <td>Bounded</td>
+          <td>High decode energy tax</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Lost in the Middle -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">4</div>
+        <h2>Quality: "Lost in the Middle"</h2>
+      </div>
+      <p>
+        Retaining full history is not a quality upper bound. <strong>Liu et al. (TACL 2024)</strong> prove that LLM accuracy follows a U-shaped serial-position curve:
+      </p>
+      <ul>
+        <li><strong>Primacy & Recency Bias:</strong> High accuracy when facts are at the start (&gt;70%) or end (~64%).</li>
+        <li><strong>Middle Degradation:</strong> Accuracy drops to ~54%—<em>worse than answering closed-book with zero context</em> (56.1%)!</li>
+      </ul>
+
+      <div class="fig-container">
+        <img src="figures/fig2_lost_in_the_middle_paper.png" alt="Lost in the Middle Curve" style="max-height: 240px;">
+        <div class="fig-caption">Fig. 3: Multi-document QA accuracy across document position (Source: Liu et al., TACL 2024, Fig. 1). Middle turns suffer severe amnesia.</div>
+      </div>
+    </div>
+
+    <!-- Research Questions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">5</div>
+        <h2>Research Questions & Hypotheses</h2>
+      </div>
+      <div class="callout callout-highlight">
+        <strong>RQ1 (Energy Scaling):</strong> How does per-turn energy grow with conversation length with vs. without KV-cache reuse?<br>
+        <em>Hypothesis:</em> Cache off yields quadratic cumulative energy. Cache on flattens prefill, but decode costs make relative energy savings &lt; token savings.
+      </div>
+      <div class="callout callout-alert">
+        <strong>RQ2 / O2 (Break-Even Analysis - Our Core Contribution):</strong><br>
+        <em>What is the net energy overhead of context summarization, and at what conversation length does it reach a break-even point compared to KV-cache reuse?</em><br>
+        <em>Hypothesis:</em> For T &lt; T*, summarisation consumes <em>more net energy</em> due to autoregressive decode overhead. Only at long horizons does reduced prefill compensate for this tax.
+      </div>
+      <div class="callout">
+        <strong>RQ3 (Reporting & Greenwashing):</strong> Do estimation tools (EcoLogits) accurately account for cached tokens?<br>
+        <em>Hypothesis:</em> Output-token estimators fail to model cache discounts, reporting biased footprints.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= COLUMN 3 ================= -->
+  <div class="col">
+
+    <!-- Methodology & Container Architecture -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">6</div>
+        <h2>Experimental Methodology (Phase 2)</h2>
+      </div>
+      <p>
+        Controlled replay of scripted multi-turn conversations through isolated Docker containers serving <strong>vLLM</strong> on our dedicated GPU hardware.
+      </p>
+
+      <div class="fig-container">
+        <img src="figures/fig4_container_architecture.png" alt="Container Ablation Matrix">
+        <div class="fig-caption">Fig. 4: Phase 2 Test Harness, Docker Ablation Matrix, and Energy Instrumentation pipeline.</div>
+      </div>
+
+      <p><strong>Ablation Matrix:</strong></p>
+      <ul>
+        <li><strong>Cont. 0 (Baseline):</strong> Prefix caching OFF (naive full recomputation).</li>
+        <li><strong>Cont. A (Cache Only):</strong> Prefix caching ON, full history.</li>
+        <li><strong>Cont. B (Window Only):</strong> Sliding window (last 5 msgs), caching OFF.</li>
+        <li><strong>Cont. C (Summary Only):</strong> Rolling summary, caching OFF.</li>
+        <li><strong>Cont. D (Mega-Optimized):</strong> Caching ON + cache-aware chunked window.</li>
+      </ul>
+    </div>
+
+    <!-- Measurement Hygiene & Threats -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">7</div>
+        <h2>Hardware, Metrics & Threats to Validity</h2>
+      </div>
+      <ul>
+        <li><strong>Server Hardware:</strong> 2 &times; NVIDIA RTX 4080 (16 GB VRAM each). Single GPU per run (Fernandez: tensor parallelism increases energy by 29–55%). Small open-weight LM (3–4B BF16).</li>
+        <li><strong>Energy Protocol:</strong> CodeCarbon + direct NVML hardware counters. 5 repetitions, randomised order, idle baseline subtracted.</li>
+        <li><strong>Quality Metric:</strong> Exact match recall of facts planted systematically at Early (T1–3), Middle (T10–15), and Recent (last 2–3) turns.</li>
+        <li><strong>Composite Metric:</strong> <code>Joules per Correct Answer</code> (O4).</li>
+        <li><strong>Threats to Validity:</strong> NVML sampling granularity on short turns; single-user batching vs. multi-user memory eviction contention.</li>
+      </ul>
+    </div>
+
+    <!-- Timeline & References -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-num">8</div>
+        <h2>Project Timeline & Core References</h2>
+      </div>
+      <table class="custom-table" style="font-size: 12.5px;">
+        <tr><th>Milestone</th><th>Target Date</th><th>Deliverable</th></tr>
+        <tr><td>Phase 1 Defence</td><td>Nov 20, 2026</td><td>Poster & Oral Exam</td></tr>
+        <tr><td>Harness & Spikes</td><td>Early Dec 2026</td><td>vLLM & NVML scripts</td></tr>
+        <tr><td>E1 & E2 Runs</td><td>Dec–Early Jan</td><td>Ablation measurements</td></tr>
+        <tr><td>Final Report</td><td>Late Jan 2027</td><td>8–10 Page Paper</td></tr>
+      </table>
+
+      <div style="font-size: 11.5px; color: #64748b; margin-top: 10px; line-height: 1.35;">
+        <strong>References:</strong><br>
+        [1] Fernandez et al., ACL 2025. <em>Energy of LLM Inference & Optimizations</em>.<br>
+        [2] Liu et al., TACL 2024. <em>Lost in the Middle: How LMs Use Long Contexts</em>.<br>
+        [3] Kwon et al., SOSP 2023. <em>Efficient Memory Serving with PagedAttention</em>.<br>
+        [4] Zine et al., arXiv:2607.09172. <em>Evaluating Energy Across vLLM Configs</em>.
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div><strong>TU Berlin · Sustainable Computing (WiSe 2026/27)</strong> · Module Project</div>
+  <div>Source repository: <code>LLM-context-resource-management</code> · Generated for A0/A1 Print & Presentation</div>
+</div>
+
+</body>
+</html>
